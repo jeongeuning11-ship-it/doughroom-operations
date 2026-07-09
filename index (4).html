@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#111111" />
+  <title>Doughroom OS</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#F7F6F3;-webkit-tap-highlight-color:transparent}
+    input,button,select,textarea{font-family:inherit}
+    a{-webkit-tap-highlight-color:transparent}
+    ::-webkit-scrollbar{display:none}
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useEffect,useMemo,useState}=React;
+
+const C={bg:'#F7F6F3',surface:'#FFFFFF',surface2:'#EFEDE8',cream:'#F8F4EC',border:'#D8D6D0',border2:'#C9C6BF',ink:'#111111',dim:'#595959',muted:'#9A978F',gold:'#7A7468',blue:'#4F5B66',green:'#4E6251',red:'#8F3D3D',orange:'#6E665C',wine:'#2E2E2E'};
+const CAT={bev:{label:'음료·식자재',color:'#444444'},supply:{label:'비품·소모품',color:'#77736B'},equip:{label:'기물·집기',color:'#5C5C5C'},wine:{label:'와인·교육',color:'#111111'}};
+const STATUS={waiting:{label:'대기중',next:'ordered',nextLabel:'발주하기',color:C.gold},ordered:{label:'발주중',next:'done',nextLabel:'배송완료',color:C.blue},done:{label:'배송완료',next:null,nextLabel:null,color:C.green}};
+const DEFAULT_ITEMS=[
+  {id:1,name:'에비앙 330ml',cat:'bev',unit:'박스',price:0,purchaseUrl:'',note:'6병 단위 박스',favorite:true,lastOrdered:''},
+  {id:2,name:'탄산수',cat:'bev',unit:'박스',price:0,purchaseUrl:'',note:'페리에/산펠레그리노',favorite:true,lastOrdered:''},
+  {id:3,name:'콜라',cat:'bev',unit:'박스',price:0,purchaseUrl:'',note:'구매처 링크 등록',favorite:true,lastOrdered:''},
+  {id:4,name:'제로콜라',cat:'bev',unit:'박스',price:0,purchaseUrl:'',note:'구매처 링크 등록',favorite:true,lastOrdered:''},
+  {id:5,name:'우유',cat:'bev',unit:'개',price:0,purchaseUrl:'',note:'커피용',favorite:false,lastOrdered:''},
+  {id:6,name:'드립 커피 원두',cat:'bev',unit:'봉',price:0,purchaseUrl:'',note:'현재 사용 블렌드',favorite:false,lastOrdered:''},
+  {id:7,name:'화장지 업소용',cat:'supply',unit:'박스',price:0,purchaseUrl:'',note:'화장실 비치',favorite:false,lastOrdered:''},
+  {id:8,name:'핸드타올 페이퍼',cat:'supply',unit:'박스',price:0,purchaseUrl:'',note:'주방·화장실',favorite:true,lastOrdered:''},
+  {id:9,name:'주방세제',cat:'supply',unit:'개',price:0,purchaseUrl:'',note:'식기 세척용',favorite:false,lastOrdered:''},
+  {id:10,name:'비닐장갑',cat:'supply',unit:'박스',price:0,purchaseUrl:'',note:'주방 위생용',favorite:false,lastOrdered:''},
+  {id:11,name:'랩·호일',cat:'supply',unit:'개',price:0,purchaseUrl:'',note:'주방 보관용',favorite:false,lastOrdered:''},
+  {id:12,name:'쓰레기봉투 대',cat:'supply',unit:'묶음',price:0,purchaseUrl:'',note:'분리수거 포함',favorite:false,lastOrdered:''},
+  {id:13,name:'살균 소독제',cat:'supply',unit:'개',price:0,purchaseUrl:'',note:'식품 접촉면용',favorite:false,lastOrdered:''},
+  {id:14,name:'영수증 용지 POS',cat:'supply',unit:'박스',price:0,purchaseUrl:'',note:'80mm 롤',favorite:false,lastOrdered:''},
+  {id:15,name:'와인잔 레드용',cat:'equip',unit:'개',price:0,purchaseUrl:'',note:'파손 수량 확인',favorite:false,lastOrdered:''},
+  {id:16,name:'와인잔 화이트용',cat:'equip',unit:'개',price:0,purchaseUrl:'',note:'파손 수량 확인',favorite:false,lastOrdered:''},
+  {id:17,name:'워터글라스',cat:'equip',unit:'개',price:0,purchaseUrl:'',note:'서비스 기본',favorite:false,lastOrdered:''},
+  {id:18,name:'디너 포크',cat:'equip',unit:'개',price:0,purchaseUrl:'',note:'세트 수량 확인',favorite:false,lastOrdered:''},
+  {id:19,name:'디너 나이프',cat:'equip',unit:'개',price:0,purchaseUrl:'',note:'세트 수량 확인',favorite:false,lastOrdered:''},
+  {id:20,name:'스푼 디저트',cat:'equip',unit:'개',price:0,purchaseUrl:'',note:'',favorite:false,lastOrdered:''}
+];
+const WINES=[
+  {id:'macon',name:'Pierre Vessiguet Mâcon-Fuissé Les Tâches',short:'마꽁 퓌세 레 타슈',type:'화이트',country:'프랑스',region:'부르고뉴 마꽁',grape:'샤도네이',price:'',tags:['미네랄','깔끔함','산뜻함','오크 절제'],summary:'부르고뉴 남부 마꽁 지역의 샤도네이. 과하게 버터리하기보다 레몬, 흰 꽃, 미네랄 중심의 깔끔한 스타일입니다.',guest:'부르고뉴 마꽁 지역의 샤도네이입니다. 오크가 과하지 않아 산뜻하고 미네랄감이 좋아 해산물이나 크림감 있는 파스타와 균형이 좋습니다.',pairing:['브란지노','뇨끼','완두 라비올리','시저 샐러드'],memory:'화려한 오크보다 균형 잡힌 미네랄 중심의 샤도네이.'},
+  {id:'brunello',name:'Villa Cipressi Brunello di Montalcino 2017',short:'브루넬로 디 몬탈치노',type:'레드',country:'이탈리아',region:'토스카나 몬탈치노',grape:'산지오베제 그로쏘',price:'',tags:['체리','말린 장미','허브','숙성감'],summary:'토스카나를 대표하는 최고급 DOCG 와인. 산지오베제 그로쏘 100%로 만들며, 깊이 있는 체리 풍미와 긴 여운이 특징입니다.',guest:'토스카나 몬탈치노를 대표하는 와인입니다. 잘 익은 체리와 말린 장미, 은은한 허브 향이 조화롭고 숙성감이 있어 채끝이나 라구와 잘 어울립니다.',pairing:['채끝','라구 파스타','라자냐','참나물 따야린'],memory:'브루넬로는 산지오베제 그로쏘로 만드는 토스카나의 대표 DOCG.'},
+  {id:'savigny',name:'Domaine de Bellène Savigny-lès-Beaune Vieilles Vignes 2018',short:'사비니 레 본 비에이 비뉴',type:'레드',country:'프랑스',region:'부르고뉴 코트 드 본',grape:'피노 누아',price:'',tags:['붉은 과실','섬세함','버섯','부드러운 타닌'],summary:'부르고뉴 코트 드 본의 피노 누아. 오래된 포도나무에서 오는 농도와 붉은 과실, 은은한 흙내음이 매력적입니다.',guest:'부르고뉴 피노 누아 특유의 섬세한 붉은 과실과 은은한 버섯 향이 있는 와인입니다. 무겁지 않지만 여운이 좋아 파스타와 메인 모두에 잘 붙습니다.',pairing:['뇨끼','라구 파스타','치킨 디아볼라','버섯 풍미 메뉴'],memory:'부르고뉴 피노 누아는 힘보다 섬세함과 향의 결이 핵심.'}
+];
+
+const won=n=>Number(n||0).toLocaleString('ko-KR');
+const today=()=>new Date().toLocaleDateString('ko-KR').replace(/\. /g,'. ').replace(/\.$/,'');
+const monthKey=d=>{const p=(d||today()).split('. ');return `${p[0]}. ${p[1]}`};
+const safeJson=(key,fb)=>{try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(fb))}catch{return fb}};
+const save=(key,val)=>localStorage.setItem(key,JSON.stringify(val));
+const searchText=v=>(v||'').toString().toLowerCase();
+const linkFor=o=>o.purchaseUrl||`https://search.shopping.naver.com/search/all?query=${encodeURIComponent(o.name)}`;
+
+function Button({children,onClick,disabled,variant='dark',style={}}){
+  const bg=variant==='dark'?C.ink:variant==='line'?'transparent':variant==='red'?C.red:variant==='gold'?C.gold:C.surface2;
+  const color=variant==='dark'||variant==='red'||variant==='gold'?C.surface:variant==='line'?C.dim:C.ink;
+  return <button disabled={disabled} onClick={onClick} style={{border:variant==='line'?`1px solid ${C.border}`:'none',background:disabled?C.border2:bg,color:disabled?C.muted:color,borderRadius:13,padding:'12px 16px',fontSize:14,fontWeight:800,cursor:disabled?'not-allowed':'pointer',...style}}>{children}</button>
+}
+function Header({view,setView,counts}){return <div style={{position:'sticky',top:0,zIndex:50,background:C.surface,borderBottom:`1px solid ${C.border}`,padding:'12px 16px'}}>
+  <div style={{maxWidth:620,margin:'0 auto',display:'flex',alignItems:'center',justifyContent:'space-between',gap:10}}>
+    <button onClick={()=>setView('home')} style={{border:'none',background:'transparent',color:C.ink,fontWeight:900,letterSpacing:'0.02em',fontSize:14,cursor:'pointer'}}>doughroom gwanghwamun</button>
+    <div style={{display:'flex',gap:3,background:C.surface2,padding:4,borderRadius:12}}>
+      {[['order','발주'],['manager','관리'],['done','완료'],['wine','와인']].map(([k,l])=><button key={k} onClick={()=>setView(k)} style={{position:'relative',border:'none',borderRadius:9,padding:'8px 10px',fontSize:12,fontWeight:view===k?900:600,background:view===k?C.ink:'transparent',color:view===k?C.surface:C.dim,cursor:'pointer'}}>{l}{k==='manager'&&counts.waiting>0&&<span style={{position:'absolute',top:-4,right:-3,background:C.red,color:'#fff',borderRadius:99,padding:'1px 5px',fontSize:9}}>{counts.waiting}</span>}</button>)}
+    </div>
+  </div>
+</div>}
+function Card({children,onClick,style={}}){return <div onClick={onClick} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:18,padding:16,boxShadow:'0 8px 22px rgba(60,45,25,0.04)',...style}}>{children}</div>}
+function Modal({children,onClose}){return <div onClick={onClose} style={{position:'fixed',inset:0,zIndex:200,background:'rgba(26,23,20,.55)',display:'flex',alignItems:'flex-end',justifyContent:'center'}}><div onClick={e=>e.stopPropagation()} style={{width:'100%',maxWidth:620,maxHeight:'88vh',overflow:'auto',background:C.surface,borderRadius:'22px 22px 0 0',padding:'20px 20px 34px'}}>{children}</div></div>}
+function Field({label,value,onChange,placeholder,type='text'}){return <label style={{display:'block',marginBottom:12}}><div style={{fontSize:12,color:C.dim,fontWeight:800,marginBottom:6}}>{label}</div><input type={type} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} style={{width:'100%',padding:'13px 14px',border:`1px solid ${C.border}`,borderRadius:12,background:C.surface,color:C.ink,fontSize:15,outline:'none'}} /></label>}
+function Tag({children,color=C.gold}){return <span style={{fontSize:11,fontWeight:900,color,background:color+'1F',borderRadius:99,padding:'4px 9px',whiteSpace:'nowrap'}}>{children}</span>}
+
+function Home({setView,counts,totalMonth}){return <div style={{padding:'28px 18px 80px'}}>
+  <div style={{textAlign:'center',margin:'16px 0 28px'}}><div style={{fontSize:28,fontWeight:900,letterSpacing:'0.02em',color:C.ink}}>doughroom gwanghwamun</div><div style={{fontSize:13,fontWeight:800,color:C.dim,marginTop:6}}>operation system</div></div>
+  <Card style={{marginBottom:14,background:'linear-gradient(135deg,#FFFFFF,#F8F4EC)'}}>
+    <div style={{fontSize:13,color:C.dim,fontWeight:800,marginBottom:10}}>오늘 운영 브리핑</div>
+    <div style={{fontSize:22,fontWeight:900,lineHeight:1.45}}>발주 대기 {counts.waiting}건<br/>발주중 {counts.ordered}건</div>
+    <div style={{fontSize:13,color:C.dim,marginTop:10}}>이번 달 완료 금액 ₩{won(totalMonth)}</div>
+  </Card>
+  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:18}}>
+    {[['order','발주 요청','빠른 검색·수량'],['manager','발주 관리','구매·배송완료'],['done','완료 이력','월별 금액 요약'],['wine','와인 센터','설명·페어링']].map(([k,t,s])=><Card key={k} onClick={()=>setView(k)} style={{cursor:'pointer',minHeight:105}}><div style={{fontSize:18,fontWeight:900,marginBottom:8}}>{t}</div><div style={{fontSize:12,color:C.dim,fontWeight:700}}>{s}</div></Card>)}
+  </div>
+  <Card><div style={{fontSize:14,fontWeight:900,marginBottom:8}}>다음 버전 예정</div><div style={{fontSize:13,color:C.dim,lineHeight:1.8}}>재고 관리 · 오픈/퇴점 체크 · 메뉴 교육 · 직원 공지 · AI 운영 브리핑</div></Card>
+</div>}
+
+function ItemEditor({item,onSave,onDelete,onClose}){
+  const [name,setName]=useState(item?.name||''); const [cat,setCat]=useState(item?.cat||'bev'); const [unit,setUnit]=useState(item?.unit||'개'); const [price,setPrice]=useState(item?.price||0); const [purchaseUrl,setPurchaseUrl]=useState(item?.purchaseUrl||''); const [note,setNote]=useState(item?.note||''); const [favorite,setFavorite]=useState(!!item?.favorite);
+  return <Modal onClose={onClose}>
+    <div style={{fontSize:20,fontWeight:900,marginBottom:16}}>{item?'품목 수정':'품목 추가'}</div>
+    <Field label="품목명" value={name} onChange={setName} placeholder="예: 콜라" />
+    <label style={{display:'block',marginBottom:12}}><div style={{fontSize:12,color:C.dim,fontWeight:800,marginBottom:6}}>카테고리</div><select value={cat} onChange={e=>setCat(e.target.value)} style={{width:'100%',padding:'13px 14px',border:`1px solid ${C.border}`,borderRadius:12,background:C.surface,fontSize:15}}>{Object.entries(CAT).filter(([k])=>k!=='wine').map(([k,v])=><option key={k} value={k}>{v.label}</option>)}</select></label>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}><Field label="단위" value={unit} onChange={setUnit} placeholder="박스"/><Field label="단가" type="number" value={price} onChange={setPrice} placeholder="0"/></div>
+    <Field label="구매 링크" value={purchaseUrl} onChange={setPurchaseUrl} placeholder="https://..." />
+    <Field label="비고" value={note} onChange={setNote} placeholder="보관 위치, 발주 기준 등" />
+    <button onClick={()=>setFavorite(v=>!v)} style={{width:'100%',border:`1px solid ${favorite?C.gold:C.border}`,background:favorite?'rgba(154,127,82,.12)':'transparent',color:favorite?C.gold:C.dim,borderRadius:12,padding:12,fontWeight:900,marginBottom:12}}>{favorite?'★ 즐겨찾기 해제':'☆ 즐겨찾기 추가'}</button>
+    {item&&<Button variant="red" onClick={()=>{onDelete(item.id);onClose()}} style={{width:'100%',marginBottom:10}}>삭제</Button>}
+    <div style={{display:'flex',gap:10}}><Button variant="line" onClick={onClose} style={{flex:1}}>취소</Button><Button onClick={()=>{if(!name.trim())return;onSave({name:name.trim(),cat,unit:unit.trim()||'개',price:Number(price)||0,purchaseUrl:purchaseUrl.trim(),note:note.trim(),favorite});onClose()}} style={{flex:2}}>저장</Button></div>
+  </Modal>
+}
+
+function OrderView({items,setItems,orders,onSubmit}){
+  const [search,setSearch]=useState('');
+  const [cat,setCat]=useState('all');
+  const [qty,setQty]=useState({});
+  const [edit,setEdit]=useState(false);
+  const [modal,setModal]=useState(null);
+  const activeIds=new Set(orders.filter(o=>o.status!=='done').map(o=>o.itemId));
+  const shown=useMemo(()=>items
+    .filter(i=>cat==='all'||i.cat===cat)
+    .filter(i=>{const q=searchText(search.trim());return !q||searchText(i.name).includes(q)||searchText(i.note).includes(q)})
+    .sort((a,b)=>(b.favorite-a.favorite)||a.name.localeCompare(b.name,'ko')),[items,cat,search]);
+  const picked=Object.entries(qty).filter(([_,v])=>Number(v)>0).map(([id,v])=>{const item=items.find(i=>String(i.id)===String(id));return item?{...item,qty:Number(v)}:null}).filter(Boolean);
+  const setQ=(id,n)=>setQty(p=>({...p,[id]:Math.max(0,Number(n)||0)}));
+  const saveItem=data=>{ if(modal==='add'){const nextId=items.length?Math.max(...items.map(i=>Number(i.id)||0))+1:1;setItems(p=>[...p,{id:nextId,lastOrdered:'',...data}])} else setItems(p=>p.map(i=>i.id===modal.id?{...i,...data}:i)); };
+  const del=id=>{setItems(p=>p.filter(i=>i.id!==id));setQty(p=>{const n={...p};delete n[id];return n})};
+  const submit=()=>{if(!picked.length)return;onSubmit(picked);setQty({});alert('발주 요청이 등록되었습니다.');};
+  const cardClick=(item,active)=>{
+    if(edit){setModal(item);return;}
+    if(active)return;
+    setQ(item.id,(qty[item.id]||0)+1);
+  };
+  return <div style={{padding:'18px 18px 95px'}}>
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+      <div><div style={{fontSize:24,fontWeight:900}}>발주 요청</div><div style={{fontSize:13,color:C.dim,marginTop:3}}>품목을 누르거나 + 버튼으로 수량을 올리세요.</div></div>
+      <Button variant="line" onClick={()=>setEdit(v=>!v)}>{edit?'완료':'편집'}</Button>
+    </div>
+    {!edit&&<Field label="품목 검색" value={search} onChange={setSearch} placeholder="예: 콜라, 와인잔, 냅킨" />}
+    <div style={{display:'flex',gap:8,overflowX:'auto',margin:'2px 0 14px'}}>
+      {[["all","전체"],["bev","음료"],["supply","비품"],["equip","기물"]].map(([k,l])=><button key={k} onClick={()=>setCat(k)} style={{border:`1px solid ${cat===k?C.ink:C.border}`,background:cat===k?C.ink:C.surface,color:cat===k?C.surface:C.dim,borderRadius:99,padding:'8px 14px',fontSize:13,fontWeight:900,whiteSpace:'nowrap'}}>{l}</button>)}
+    </div>
+    {shown.map(item=>{
+      const active=activeIds.has(item.id);
+      const selected=Number(qty[item.id]||0)>0;
+      return <Card key={item.id} onClick={()=>cardClick(item,active)} style={{marginBottom:9,opacity:active&&!edit?0.72:1,background:selected&&!edit?C.cream:active&&!edit?'#ECEAE5':C.surface,cursor:edit?'pointer':active?'not-allowed':'pointer',border:selected&&!edit?`1.5px solid ${C.ink}`:`1px solid ${C.border}`}}>
+        <div style={{display:'flex',alignItems:'center',gap:12}}>
+          <button onClick={e=>{e.stopPropagation();setItems(p=>p.map(i=>i.id===item.id?{...i,favorite:!i.favorite}:i))}} style={{border:'none',background:'transparent',fontSize:19,color:item.favorite?C.ink:C.muted,cursor:'pointer'}}>{item.favorite?'★':'☆'}</button>
+          <div style={{width:7,height:7,borderRadius:99,background:CAT[item.cat]?.color||C.dim}} />
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}><span style={{fontSize:16,fontWeight:900}}>{item.name}</span>{active&&!edit&&<Tag color={C.blue}>발주중</Tag>}{selected&&!edit&&<Tag color={C.ink}>{qty[item.id]}{item.unit||'개'} 선택</Tag>}</div>
+            <div style={{fontSize:12,color:C.muted,marginTop:4}}>{CAT[item.cat]?.label} · {item.unit||'개'}{item.lastOrdered?` · 마지막 ${item.lastOrdered}`:''}</div>
+            {item.note&&<div style={{fontSize:12,color:C.dim,marginTop:4}}>{item.note}</div>}
+          </div>
+          {!edit&&<div style={{display:'flex',alignItems:'center',gap:8}}>
+            <button disabled={active} onClick={e=>{e.stopPropagation();setQ(item.id,(qty[item.id]||0)-1)}} style={{width:34,height:34,borderRadius:10,border:`1px solid ${C.border}`,background:C.surface2,color:C.ink,fontSize:18}}>−</button>
+            <input disabled={active} onClick={e=>e.stopPropagation()} type="number" value={qty[item.id]||0} onChange={e=>setQ(item.id,e.target.value)} style={{width:45,textAlign:'center',border:`1px solid ${C.border}`,borderRadius:10,padding:'8px 4px',background:C.surface,color:C.ink}}/>
+            <button disabled={active} onClick={e=>{e.stopPropagation();setQ(item.id,(qty[item.id]||0)+1)}} style={{width:34,height:34,borderRadius:10,border:'none',background:C.ink,color:C.surface,fontSize:18}}>+</button>
+          </div>}
+          {edit&&<span style={{fontSize:24,color:C.muted}}>›</span>}
+        </div>
+      </Card>
+    })}
+    {edit&&<Button variant="dark" onClick={()=>setModal('add')} style={{width:'100%',marginTop:6}}>+ 품목 추가</Button>}
+    {!edit&&<div style={{position:'fixed',bottom:0,left:0,right:0,background:C.surface,borderTop:`1px solid ${C.border}`,padding:'14px 18px 28px',zIndex:40}}><div style={{maxWidth:620,margin:'0 auto',display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}><div><div style={{fontSize:20,fontWeight:900,color:C.ink}}>{picked.length}개 품목</div><div style={{fontSize:12,color:C.dim}}>예상 ₩{won(picked.reduce((s,i)=>s+(i.price||0)*i.qty,0))}</div></div><Button disabled={!picked.length} onClick={submit} style={{minWidth:150}}>발주요청 제출</Button></div></div>}
+    {modal&&<ItemEditor item={modal==='add'?null:modal} onSave={saveItem} onDelete={del} onClose={()=>setModal(null)} />}
+  </div>
+}
+
+function ManagerView({orders,onStatus}){
+  const [filter,setFilter]=useState('waiting');
+  const rows=orders.filter(o=>o.status===filter);
+  return <div style={{padding:'18px 18px 80px'}}>
+    <div style={{fontSize:24,fontWeight:900,marginBottom:12}}>발주 관리</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:9,marginBottom:14}}>{[['waiting','대기중'],['ordered','발주중']].map(([k,l])=><button key={k} onClick={()=>setFilter(k)} style={{border:`1.5px solid ${filter===k?STATUS[k].color:C.border}`,background:filter===k?STATUS[k].color+'18':C.surface,borderRadius:14,padding:14}}><div style={{fontSize:24,fontWeight:900,color:STATUS[k].color}}>{orders.filter(o=>o.status===k).length}</div><div style={{fontSize:12,fontWeight:900,color:C.dim}}>{l}</div></button>)}</div>
+    {!rows.length&&<Card style={{textAlign:'center',padding:'50px 10px',color:C.muted}}>해당 항목이 없습니다.</Card>}
+    {rows.map(o=><Card key={o.orderId} style={{marginBottom:10}}><div style={{display:'flex',gap:10,alignItems:'flex-start'}}><div style={{flex:1}}><div style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center'}}><span style={{fontSize:17,fontWeight:900}}>{o.name}</span><Tag color={STATUS[o.status].color}>{STATUS[o.status].label}</Tag></div><div style={{fontSize:13,color:C.dim,marginTop:6}}>{o.qty} {o.unit||'개'} · ₩{won((o.price||0)*o.qty)}</div><div style={{fontSize:12,color:C.muted,marginTop:4}}>{o.submittedAt}</div></div>{o.status==='waiting'?<a href={linkFor(o)} target="_blank" rel="noopener noreferrer" onClick={()=>onStatus(o.orderId,'ordered')} style={{textDecoration:'none',background:C.ink,color:C.surface,borderRadius:12,padding:'12px 14px',fontSize:13,fontWeight:900,whiteSpace:'nowrap'}}>발주하기</a>:<Button variant="gold" onClick={()=>onStatus(o.orderId,'done')}>배송완료</Button>}</div></Card>)}
+  </div>
+}
+function DoneView({orders}){
+  const done=orders.filter(o=>o.status==='done');
+  const groups=done.reduce((acc,o)=>{const k=monthKey(o.doneAt||o.submittedAt);acc[k]=acc[k]||[];acc[k].push(o);return acc},{});
+  return <div style={{padding:'18px 18px 80px'}}><div style={{fontSize:24,fontWeight:900,marginBottom:12}}>배송완료</div>{!done.length&&<Card style={{textAlign:'center',padding:50,color:C.muted}}>완료 이력이 없습니다.</Card>}{Object.entries(groups).sort((a,b)=>b[0].localeCompare(a[0])).map(([m,items])=>{const total=items.reduce((s,o)=>s+(o.price||0)*o.qty,0);return <Card key={m} style={{marginBottom:14}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:12}}><div style={{fontSize:18,fontWeight:900}}>{m}</div><div style={{fontSize:14,fontWeight:900,color:C.green}}>₩{won(total)}</div></div>{items.map(o=><div key={o.orderId} style={{display:'grid',gridTemplateColumns:'1fr auto auto',gap:8,padding:'9px 0',borderTop:`1px solid ${C.border}`}}><div style={{fontSize:14,fontWeight:800}}>{o.name}</div><div style={{fontSize:13,color:C.dim}}>{o.qty}{o.unit}</div><div style={{fontSize:13,fontWeight:800}}>₩{won((o.price||0)*o.qty)}</div></div>)}</Card>})}</div>
+}
+function WineView(){
+  const [q,setQ]=useState(''); const [open,setOpen]=useState(null);
+  const rows=WINES.filter(w=>{const s=[w.name,w.short,w.type,w.region,w.grape,...w.tags,...w.pairing].join(' ').toLowerCase();return !q||s.includes(q.toLowerCase())});
+  return <div style={{padding:'18px 18px 80px'}}><div style={{fontSize:24,fontWeight:900}}>와인 센터</div><div style={{fontSize:13,color:C.dim,margin:'4px 0 14px'}}>고객 설명 · 페어링 · 교육 포인트</div><Field label="와인 검색" value={q} onChange={setQ} placeholder="예: 브루넬로, 채끝, 피노누아, 미네랄" />{rows.map(w=><Card key={w.id} style={{marginBottom:10,cursor:'pointer'}} onClick={()=>setOpen(open===w.id?null:w.id)}><div style={{display:'flex',justifyContent:'space-between',gap:8}}><div><div style={{fontSize:17,fontWeight:900}}>{w.short}</div><div style={{fontSize:12,color:C.dim,marginTop:4}}>{w.country} · {w.region} · {w.grape}</div></div><Tag color={w.type==='레드'?C.wine:C.blue}>{w.type}</Tag></div><div style={{fontSize:13,color:C.dim,lineHeight:1.65,marginTop:10}}>{w.summary}</div>{open===w.id&&<div style={{marginTop:14,borderTop:`1px solid ${C.border}`,paddingTop:14}}><section style={{marginBottom:14}}><div style={{fontSize:12,color:C.gold,fontWeight:900,marginBottom:6}}>고객 설명</div><div style={{fontSize:15,lineHeight:1.7}}>{w.guest}</div></section><section style={{marginBottom:14}}><div style={{fontSize:12,color:C.gold,fontWeight:900,marginBottom:6}}>추천 페어링</div><div style={{display:'flex',gap:6,flexWrap:'wrap'}}>{w.pairing.map(p=><Tag key={p} color={C.green}>{p}</Tag>)}</div></section><section><div style={{fontSize:12,color:C.gold,fontWeight:900,marginBottom:6}}>기억 포인트</div><div style={{fontSize:14,lineHeight:1.6,color:C.dim}}>{w.memory}</div></section></div>}</Card>)}</div>
+}
+
+function App(){
+  const [view,setView]=useState('home');
+  const [items,setItems]=useState(()=>safeJson('dos_items',DEFAULT_ITEMS));
+  const [orders,setOrders]=useState(()=>safeJson('dos_orders',[]));
+  const [seq,setSeq]=useState(()=>safeJson('dos_seq',1));
+  useEffect(()=>save('dos_items',items),[items]); useEffect(()=>save('dos_orders',orders),[orders]); useEffect(()=>save('dos_seq',seq),[seq]);
+  const submit=(picked)=>{const d=today(); const newOrders=picked.map((i,idx)=>({...i,itemId:i.id,orderId:`DO-${String(seq+idx).padStart(5,'0')}`,status:'waiting',submittedAt:d,doneAt:''})); setOrders(p=>[...newOrders,...p]); setSeq(n=>n+newOrders.length)};
+  const onStatus=(id,status)=>{const d=today(); setOrders(p=>p.map(o=>o.orderId===id?{...o,status,doneAt:status==='done'?d:o.doneAt}:o)); if(status==='ordered'){const o=orders.find(x=>x.orderId===id); if(o) setItems(p=>p.map(i=>i.id===o.itemId?{...i,lastOrdered:d}:i))}}
+  const counts={waiting:orders.filter(o=>o.status==='waiting').length,ordered:orders.filter(o=>o.status==='ordered').length,done:orders.filter(o=>o.status==='done').length};
+  const totalMonth=orders.filter(o=>o.status==='done'&&monthKey(o.doneAt)===monthKey(today())).reduce((s,o)=>s+(o.price||0)*o.qty,0);
+  return <div style={{minHeight:'100vh',background:C.bg,color:C.ink,fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"}}>{view!=='home'&&<Header view={view} setView={setView} counts={counts}/>}<main style={{maxWidth:620,margin:'0 auto'}}>{view==='home'&&<Home setView={setView} counts={counts} totalMonth={totalMonth}/>} {view==='order'&&<OrderView items={items} setItems={setItems} orders={orders} onSubmit={submit}/>} {view==='manager'&&<ManagerView orders={orders} onStatus={onStatus}/>} {view==='done'&&<DoneView orders={orders}/>} {view==='wine'&&<WineView/>}</main></div>
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
