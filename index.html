@@ -87,7 +87,7 @@ function Home({setView,counts,totalMonth}){return <div style={{padding:'28px 18p
     <div style={{fontSize:13,color:C.dim,marginTop:10}}>이번 달 완료 금액 ₩{won(totalMonth)}</div>
   </Card>
   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:18}}>
-    {[['order','발주 요청','빠른 검색·수량'],['manager','발주 관리','구매·배송완료'],['done','완료 이력','월별 금액 요약'],['wine','와인 센터','설명·페어링']].map(([k,t,s])=><Card key={k} onClick={()=>setView(k)} style={{cursor:'pointer',minHeight:105}}><div style={{fontSize:18,fontWeight:900,marginBottom:8}}>{t}</div><div style={{fontSize:12,color:C.dim,fontWeight:700}}>{s}</div></Card>)}
+    {[['order','발주 요청','빠른 검색·수량'],['manager','발주 관리','구매·배송완료'],['done','완료 이력','월별 금액 요약'],['wine','업셀링 와인','설명·페어링']].map(([k,t,s])=><Card key={k} onClick={()=>setView(k)} style={{cursor:'pointer',minHeight:105}}><div style={{fontSize:18,fontWeight:900,marginBottom:8}}>{t}</div><div style={{fontSize:12,color:C.dim,fontWeight:700}}>{s}</div></Card>)}
   </div>
   <Card><div style={{fontSize:14,fontWeight:900,marginBottom:8}}>다음 버전 예정</div><div style={{fontSize:13,color:C.dim,lineHeight:1.8}}>재고 관리 · 오픈/퇴점 체크 · 메뉴 교육 · 직원 공지 · AI 운영 브리핑</div></Card>
 </div>}
